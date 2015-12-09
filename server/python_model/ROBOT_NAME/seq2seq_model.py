@@ -25,11 +25,10 @@ import numpy as np
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 
-from tensorflow.models.rnn import rnn_cell
-from tensorflow.models.rnn import seq2seq
+from rnn import rnn_cell
+from rnn import seq2seq
 
-from tensorflow.models.rnn.translate import data_utils
-
+import data_utils
 
 class Seq2SeqModel(object):
   """Sequence-to-sequence model with attention and for multiple buckets.
@@ -53,7 +52,7 @@ class Seq2SeqModel(object):
     """Create the model.
 
     Args:
-      source_vocab_size: size of the source vocabulary.
+      vocab_size: size of the vocabulary.
       target_vocab_size: size of the target vocabulary.
       buckets: a list of pairs (I, O), where I specifies maximum input length
         that will be processed in that bucket, and O specifies maximum output
@@ -78,7 +77,11 @@ class Seq2SeqModel(object):
     self.learning_rate = tf.Variable(float(learning_rate), trainable=False)
     self.learning_rate_decay_op = self.learning_rate.assign(
         self.learning_rate * learning_rate_decay_factor)
-    self.global_step = tf.Variable(0, trainable=False)
+    self.global_step = tf.Variable(0, trainable=False)  # NOTE: made "0" --> "float(0)"
+
+    # Summary variables. NOTE: added these.
+    # self.summary_op_learning_rate = tf.scalar_summary('learning rate', self.learning_rate)
+    # self.summary_op_global_step = tf.scalar_summary('global step', self.global_step)
 
     # If we use sampled softmax, we need an output projection.
     output_projection = None
@@ -102,9 +105,9 @@ class Seq2SeqModel(object):
     single_cell = rnn_cell.GRUCell(size)
     if use_lstm:
       single_cell = rnn_cell.BasicLSTMCell(size)
-    cell = single_cell
+    cell = single_cell #i, j, f, o = array_ops.split(1, 4, concat)
     if num_layers > 1:
-      cell = rnn_cell.MultiRNNCell([single_cell] * num_layers)
+      cell = rnn_cell.MultiRNNCell([single_cell] * num_layers) #cur_inp, array_ops.concat(1, new_states)
 
     # The seq2seq function: we use embedding for the input and attention.
     def seq2seq_f(encoder_inputs, decoder_inputs, do_decode):
@@ -151,6 +154,7 @@ class Seq2SeqModel(object):
 
     # Gradients and SGD update operation for training the model.
     params = tf.trainable_variables()
+    self.params = params
     if not forward_only:
       self.gradient_norms = []
       self.updates = []
@@ -166,7 +170,7 @@ class Seq2SeqModel(object):
     self.saver = tf.train.Saver(tf.all_variables())
 
   def step(self, session, encoder_inputs, decoder_inputs, target_weights,
-           bucket_id, forward_only):
+           bucket_id, forward_only, merged_summaries): # NOTE: added merged_summaries args
     """Run a step of the model feeding the given inputs.
 
     Args:
@@ -219,11 +223,16 @@ class Seq2SeqModel(object):
       for l in xrange(decoder_size):  # Output logits.
         output_feed.append(self.outputs[bucket_id][l])
 
+    # NOTE: added final arg for summaries
+    output_feed.append(merged_summaries)
+
     outputs = session.run(output_feed, input_feed)
+
+    # NOTE: added outputs[-1] prefix with summaries to both exit paths
     if not forward_only:
-      return outputs[1], outputs[2], None  # Gradient norm, loss, no outputs.
+      return outputs[-1], outputs[1], outputs[2], None  # Summaries, Gradient norm, loss, no outputs.
     else:
-      return None, outputs[0], outputs[1:]  # No gradient norm, loss, outputs.
+      return outputs[-1], None, outputs[0], outputs[1:]  # Summaries, No gradient norm, loss, outputs.
 
   def get_batch(self, data, bucket_id):
     """Get a random batch of data from the specified bucket, prepare for step.
