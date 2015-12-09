@@ -1,2 +1,17 @@
 bower_components
 node_modules
+
+server/python_model/bazel-bin
+server/python_model/bazel-genfiles
+server/python_model/bazel-out
+server/python_model/bazel-tensorflow
+server/python_model/bazel-testlogs
+server/python_model/bazel-tf
+server/python_model/third_party/py/numpy/numpy_include
+server/python_model/tools/bazel.rc
+server/python_model/util/python/python_include
+server/python_model/util/python/python_lib
+
+server/python_model/ROBOT_NAME/data_dir
+server/python_model/ROBOT_NAME/train_dir
+
