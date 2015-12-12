@@ -88,7 +88,7 @@ class Seq2SeqModel(object):
           print(type(targets[k]), targets[k])
           print(type(self.target_weights[k]), self.target_weights[k])
           print(type(self.vocab_size), self.vocab_size)
-          self.loss.append(seq2seq.sequence_loss(self.outputs[-1], targets[k], self.target_weights[k], self.vocab_size, softmax_loss_function=softmax_loss_function))
+          self.loss.append(seq2seq.sequence_loss_by_example(self.outputs[-1], targets[k], self.target_weights[k], self.vocab_size, softmax_loss_function=softmax_loss_function))
       print(self.loss)
 
     # gradients and SGD update operation for training
