@@ -33,11 +33,13 @@ tf.app.flags.DEFINE_float("max_gradient_norm", 5.0,
                           "Clip gradients to this norm.")
 tf.app.flags.DEFINE_integer("batch_size", 64,
                             "Batch size to use during training.")
-tf.app.flags.DEFINE_integer("size", 1024, "Size of each model layer.")
+tf.app.flags.DEFINE_integer("size", 256, "Size of each model layer.")
 tf.app.flags.DEFINE_integer("num_layers", 3, "Number of layers in the model.")
-tf.app.flags.DEFINE_integer("vocab_size", 8000, "Vocabulary size.")
+tf.app.flags.DEFINE_integer("vocab_size", 3000, "Vocabulary size.")
 tf.app.flags.DEFINE_string("data_dir", "/tmp", "Data directory")
 tf.app.flags.DEFINE_string("train_dir", "/tmp", "Training directory.")
+tf.app.flags.DEFINE_string("log_dir", "/tmp", "Log directory.")
+
 tf.app.flags.DEFINE_integer("max_train_data_size", 0,
                             "Limit on the size of training data (0: no limit).")
 tf.app.flags.DEFINE_integer("steps_per_checkpoint", 200,
@@ -51,7 +53,7 @@ FLAGS = tf.app.flags.FLAGS
 
 # We use a number of buckets and pad to the closest one for efficiency.
 # See seq2seq_model.Seq2SeqModel for details of how they work.
-_buckets = [(5, 10), (10, 15), (20, 25), (150, 200)] #changed (40,50) to (150, 200)
+_buckets = [(5, 10), (10, 15), (20, 25), (40, 50)] #changed (40,50) to (150, 200)
 
 
 def read_data(data_path, max_size=None):
@@ -102,10 +104,18 @@ def create_model(session, forward_only):
 
   if ckpt and gfile.Exists(ckpt.model_checkpoint_path):
     print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
+    writer = tf.train.SummaryWriter(FLAGS.log_dir, session.graph_def)
     model.saver.restore(session, ckpt.model_checkpoint_path)
   else:
     print("Created model with fresh parameters.")
+    test_hist1 = tf.histogram_summary("name", tf.trainable_variables()[0])
+    test_hist2 = tf.histogram_summary("name2", tf.trainable_variables()[1])
+    test_hist3 = tf.histogram_summary("name3", tf.trainable_variables()[2])
+    merged_summaries = tf.merge_all_summaries()
+    # tf.train.write_graph(session.graph_def, FLAGS.log_dir, 'graph.pbtxt')
     session.run(tf.initialize_all_variables())
+
+
   return model
 
 
@@ -123,7 +133,7 @@ def train():
 
     # Set up event logging. NOTE: added this
     merged_summaries = tf.merge_all_summaries()
-    writer = tf.train.SummaryWriter(FLAGS.train_dir, sess.graph_def)
+    # writer = tf.train.SummaryWriter(FLAGS.train_dir, sess.graph_def)
 
     # Read data into buckets and compute their sizes.
     print ("Reading development and training data (limit: %d)."
@@ -156,15 +166,18 @@ def train():
       encoder_inputs, decoder_inputs, target_weights = model.get_batch(
           train_set, bucket_id)
       summaries, _, step_loss, _ = model.step(sess, encoder_inputs, decoder_inputs,
-                                   target_weights, bucket_id, False, merged_summaries)
+                                   target_weights, bucket_id, False)
       step_time += (time.time() - start_time) / FLAGS.steps_per_checkpoint
       loss += step_loss / FLAGS.steps_per_checkpoint
       current_step += 1
 
       # Once in a while, we save checkpoint, print statistics, and run evals.
       if current_step % FLAGS.steps_per_checkpoint == 0:
+
         # Save summaries. NOTE: added this
-        writer.add_summary(summaries, current_step)
+        # result = sess.run(merged_summaries)
+        # summary_str = result[0]
+        # writer.add_summary(summary_str, current_step)
 
         # Print statistics for the previous epoch.
         perplexity = math.exp(loss) if loss < 300 else float('inf')
@@ -181,11 +194,11 @@ def train():
         model.saver.save(sess, checkpoint_path, global_step=model.global_step)
         step_time, loss = 0.0, 0.0
         # Run evals on development set and print their perplexity.
-        for bucket_id in xrange(len(_buckets)):
+        for bucket_id in xrange(len(_buckets)-1):
           encoder_inputs, decoder_inputs, target_weights = model.get_batch(
               dev_set, bucket_id)
           _, _, eval_loss, _ = model.step(sess, encoder_inputs, decoder_inputs,
-                                       target_weights, bucket_id, True, merged_summaries)
+                                       target_weights, bucket_id, True)
           eval_ppx = math.exp(eval_loss) if eval_loss < 300 else float('inf')
           print("  eval: bucket %d perplexity %.2f" % (bucket_id, eval_ppx))
         sys.stdout.flush()

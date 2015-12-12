@@ -47,7 +47,7 @@ class Seq2SeqModel(object):
 
   def __init__(self, vocab_size, buckets, size,
                num_layers, max_gradient_norm, batch_size, learning_rate,
-               learning_rate_decay_factor, use_lstm=False,
+               learning_rate_decay_factor, use_lstm=True,
                num_samples=512, forward_only=False):
     """Create the model.
 
@@ -131,6 +131,8 @@ class Seq2SeqModel(object):
     # Our targets are decoder inputs shifted by one.
     targets = [self.decoder_inputs[i + 1]
                for i in xrange(len(self.decoder_inputs) - 1)]
+    print(targets, 'targets')
+    print(self.target_weights, 'target weights')
 
     # Training outputs and losses.
     if forward_only:
@@ -151,6 +153,11 @@ class Seq2SeqModel(object):
           self.target_weights, buckets, self.vocab_size,
           lambda x, y: seq2seq_f(x, y, False),
           softmax_loss_function=softmax_loss_function)
+      print(type(self.outputs), self.outputs)
+      print(type(targets), targets)
+      print(type(self.target_weights), self.target_weights)
+      print(type(self.vocab_size), self.vocab_size)
+      print(type(self.buckets), self.buckets)
 
     # Gradients and SGD update operation for training the model.
     params = tf.trainable_variables()
@@ -170,7 +177,7 @@ class Seq2SeqModel(object):
     self.saver = tf.train.Saver(tf.all_variables())
 
   def step(self, session, encoder_inputs, decoder_inputs, target_weights,
-           bucket_id, forward_only, merged_summaries): # NOTE: added merged_summaries args
+           bucket_id, forward_only): # NOTE: added merged_summaries args
     """Run a step of the model feeding the given inputs.
 
     Args:
@@ -224,7 +231,7 @@ class Seq2SeqModel(object):
         output_feed.append(self.outputs[bucket_id][l])
 
     # NOTE: added final arg for summaries
-    output_feed.append(merged_summaries)
+    # output_feed.append(merged_summaries)
 
     outputs = session.run(output_feed, input_feed)
 
