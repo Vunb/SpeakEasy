@@ -101,6 +101,7 @@ def create_model(session, forward_only):
     ##TODO : write out stuff for logging history here
     # test_hist1 = tf.histogram_summary("name", tf.trainable_variables()[0])
     merged_summaries = tf.merge_all_summaries()
+    writer = tf.train.SummaryWriter(FLAGS.log_dir, session.graph_def)
     # tf.train.write_graph(session.graph_def, FLAGS.log_dir, 'graph.pbtxt')
     session.run(tf.initialize_all_variables())
 

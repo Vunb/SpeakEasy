@@ -68,7 +68,7 @@ class Seq2SeqModel(object):
     # training outputs and losses
     if forward_only:
       self.outputs, self.states = seq2seq_f(self.encoder_inputs, self.decoder_inputs[:-1], True)
-      self.loss = seq2seq.sequence_loss([self.outputs, targets, self.target_weights[:-1], self.vocab_size, softmax_loss_function=softmax_loss_function)
+      self.losses = seq2seq.sequence_loss(self.outputs, targets, self.target_weights[:-1], self.vocab_size, softmax_loss_function=softmax_loss_function)
       # project outputs for decoding
       if output_projection is not None:
         self.outputs = [tf.nn.xw_plus_b(output, output_projection[0], output_projection[1]) for output in self.outputs]

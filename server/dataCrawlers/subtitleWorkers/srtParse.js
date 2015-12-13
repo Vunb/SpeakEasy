@@ -3,7 +3,7 @@ var fs = require('fs');
 var MASTER_DIR = '/Volumes/Seagate Backup Plus Drive/'
 
 module.exports = function(data, name, type) {
-  MASTER_DIR += type === "TV" ? "TV_DATA2/" : "MOVIE_DATA/";
+  MASTER_DIR += type === "TV" ? "wTV_DATA2/" : "MOVIE_DATA/";
   // check if file already exists
   fs.lstat(MASTER_DIR + 'INDEXED/' + name + '.txt', function(err, file) {
     if (err) {

@@ -10,6 +10,9 @@ venv
 data_dir
 train_dir
 log_dir
+data_dir2
+log_dir2
+train_dir2
 
 # 
 .DS_Store
