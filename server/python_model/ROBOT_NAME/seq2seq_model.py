@@ -153,11 +153,6 @@ class Seq2SeqModel(object):
           self.target_weights, buckets, self.vocab_size,
           lambda x, y: seq2seq_f(x, y, False),
           softmax_loss_function=softmax_loss_function)
-      print(type(self.outputs), self.outputs)
-      print(type(targets), targets)
-      print(type(self.target_weights), self.target_weights)
-      print(type(self.vocab_size), self.vocab_size)
-      print(type(self.buckets), self.buckets)
 
     # Gradients and SGD update operation for training the model.
     params = tf.trainable_variables()

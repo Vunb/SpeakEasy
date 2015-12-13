@@ -61,35 +61,20 @@ class Seq2SeqModel(object):
       self.decoder_inputs.append(tf.placeholder(tf.int32, shape=[None], name="decoder{0}".format(i)))
       self.target_weights.append(tf.placeholder(tf.float32, shape=[None], name="weight{0}".format(i)))
 
-    # targers are decoder inputs shifted by one
+    # targets are decoder inputs shifted by one
     targets = [self.decoder_inputs[i + 1]
                for i in xrange(len(self.decoder_inputs) - 1)]
 
     # training outputs and losses
     if forward_only:
-      self.outputs, self.states = seq2seq_f(self.encoder_inputs, self.decoder_inputs, True)
-      self.loss = seq2seq.sequence_loss(self.outputs[-1], targets, self.target_weights, self.vocab_size, softmax_loss_function=softmax_loss_function)
+      self.outputs, self.states = seq2seq_f(self.encoder_inputs, self.decoder_inputs[:-1], True)
+      self.loss = seq2seq.sequence_loss([self.outputs, targets, self.target_weights[:-1], self.vocab_size, softmax_loss_function=softmax_loss_function)
       # project outputs for decoding
       if output_projection is not None:
         self.outputs = [tf.nn.xw_plus_b(output, output_projection[0], output_projection[1]) for output in self.outputs]
     else:
-      self.outputs, self.states = seq2seq_f(self.encoder_inputs, self.decoder_inputs, False)
-      print('OUTPUTS=', self.outputs)
-      print('TARGETS=', targets)
-      print(self.target_weights[0], 'weights zzzz')
-      self.loss = []
-
-      all_inputs = self.encoder_inputs + self.decoder_inputs + targets + self.target_weights
-      with ops.op_scope(all_inputs, None, "model_with_buckets"):
-        for k in xrange(len(targets)):
-          if k > 0:
-            vs.get_variable_scope().reuse_variables()
-          print(type(self.outputs[-1]), self.outputs[-1])
-          print(type(targets[k]), targets[k])
-          print(type(self.target_weights[k]), self.target_weights[k])
-          print(type(self.vocab_size), self.vocab_size)
-          self.loss.append(seq2seq.sequence_loss_by_example(self.outputs[-1], targets[k], self.target_weights[k], self.vocab_size, softmax_loss_function=softmax_loss_function))
-      print(self.loss)
+      self.outputs, self.states = seq2seq_f(self.encoder_inputs, self.decoder_inputs[:-1], False)
+      self.losses = (seq2seq.sequence_loss(self.outputs, targets, self.target_weights[:-1], self.vocab_size, softmax_loss_function=softmax_loss_function))
 
     # gradients and SGD update operation for training
     params = tf.trainable_variables()
@@ -99,7 +84,7 @@ class Seq2SeqModel(object):
       self.updates = []
       opt = tf.train.GradientDescentOptimizer(self.learning_rate)
 
-      gradients = tf.gradients(self.loss, params)
+      gradients = tf.gradients(self.losses, params)
       clipped_gradients, norm = tf.clip_by_global_norm(gradients,max_gradient_norm)
       self.gradient_norms = norm
       self.updates = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
@@ -107,11 +92,12 @@ class Seq2SeqModel(object):
     self.saver = tf.train.Saver(tf.all_variables())    
 
   def step(self, session, encoder_inputs, decoder_inputs, target_weights,forward_only):
-    if len(encoder_inputs) != self.max_sentence_length:
+    encoder_size, decoder_size = self.max_sentence_length, self.max_sentence_length
+    if len(encoder_inputs) != encoder_size:
       raise ValueError("Encoder length must be equal to max sentence length")
-    if len(decoder_inputs) != self.max_sentence_length:
+    if len(decoder_inputs) != decoder_size:
         raise ValueError("Decoder length must be equal to max sentence length")
-    if len(target_weights) != self.max_sentence_length:
+    if len(target_weights) != decoder_size:
         raise ValueError("Target weights must be equal to max sentence length")
 
     # input feed: encoder inputs, decoder inputs, target_weights, as provided.
@@ -148,7 +134,7 @@ class Seq2SeqModel(object):
       return outputs[-1], None, outputs[0], outputs[1:]  # Summaries, No gradient norm, loss, outputs.
 
   def get_batch(self, data):
-      encoder_size, decoder_size = max_sentence_length
+      encoder_size, decoder_size = self.max_sentence_length, self.max_sentence_length
       encoder_inputs, decoder_inputs = [], []
 
       # Get a random batch of encoder and decoder inputs from data,
