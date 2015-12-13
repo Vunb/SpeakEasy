@@ -1,6 +1,6 @@
 var request = require('request');
 var cheerio = require('cheerio');
-var srtParser = require('./srtParse.js');
+var srtParser = require('../srtParse.js');
 var AdmZip = require('adm-zip');
 var fs = require("fs");
 var rsync = require("sync-request");
@@ -43,7 +43,7 @@ function parse_AlphabeticalList(url) { //takes a url that returns a page contain
 	});
 }
 
-function retrieveEpisodes(url, name) { //takes a url that returns a page containing a list of films starting with a given letter.
+function retrieveEpisodes(url, name) {
 	request(url, function(err, response, body) {
 		if (err) return console.log("ERROR IN THE retrieveEpisodes");
 		$ = cheerio.load(body);
@@ -73,7 +73,7 @@ function retrieveSubFile(url, name) {
 							var zip = new AdmZip(thing.body);
 							console.log('Successfully fetched ' + url);
 							var zipEntries = zip.getEntries();
-							var newSrtFile = srtParser(zip.readAsText(zipEntries[0]), name);
+							var newSrtFile = srtParser(zip.readAsText(zipEntries[0]), name, "TV");
 							// console.log(newSrtFile) // <- yo shit dawg
 						} catch (err) {
 							console.log(err, "ERROR")
