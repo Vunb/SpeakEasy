@@ -78,7 +78,7 @@ def read_data(data_path, max_size=None):
     target = data_file.readline()
     counter = 0
     while source and target and (not max_size or counter < max_size):
-      if source.split()[0] != '552' and target.split()[0] != '552':
+      if (len(source.split()) > 0) and (len(target.split()) > 0) and ('552' not in source.split()) and ('552' not in target.split()):
         counter += 1
         if counter % 1000 == 0:
           print("  reading data line %d" % counter)
@@ -301,7 +301,7 @@ def main(_):
         'value': str(e),
       }],
     )
-    raise e
+    raise
 
 if __name__ == "__main__":
   tf.app.run()

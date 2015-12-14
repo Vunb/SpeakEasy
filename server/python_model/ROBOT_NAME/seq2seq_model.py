@@ -131,8 +131,6 @@ class Seq2SeqModel(object):
     # Our targets are decoder inputs shifted by one.
     targets = [self.decoder_inputs[i + 1]
                for i in xrange(len(self.decoder_inputs) - 1)]
-    print(targets, 'targets')
-    print(self.target_weights, 'target weights')
 
     # Training outputs and losses.
     if forward_only:
