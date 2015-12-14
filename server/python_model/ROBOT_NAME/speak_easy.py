@@ -23,6 +23,7 @@ import tensorflow as tf
 
 import data_utils
 import seq2seq_model
+import slack
 from tensorflow.python.platform import gfile
 
 
@@ -77,17 +78,18 @@ def read_data(data_path, max_size=None):
     target = data_file.readline()
     counter = 0
     while source and target and (not max_size or counter < max_size):
-      counter += 1
-      if counter % 1000 == 0:
-        print("  reading data line %d" % counter)
-        sys.stdout.flush()
-      source_ids = [int(x) for x in source.split()]
-      target_ids = [int(x) for x in target.split()]
-      target_ids.append(data_utils.EOS_ID)
-      for bucket_id, (source_size, target_size) in enumerate(_buckets):
-        if len(source_ids) < source_size and len(target_ids) < target_size:
-          data_set[bucket_id].append([source_ids, target_ids])
-          break
+      if source.split()[0] != '552' and target.split()[0] != '552':
+        counter += 1
+        if counter % 1000 == 0:
+          print("  reading data line %d" % counter)
+          sys.stdout.flush()
+        source_ids = [int(x) for x in source.split()]
+        target_ids = [int(x) for x in target.split()]
+        target_ids.append(data_utils.EOS_ID)
+        for bucket_id, (source_size, target_size) in enumerate(_buckets):
+          if len(source_ids) < source_size and len(target_ids) < target_size:
+            data_set[bucket_id].append([source_ids, target_ids])
+            break
       source = target
       target = data_file.readline()
   return data_set
@@ -120,6 +122,9 @@ def create_model(session, forward_only):
 
 
 def train():
+  slack.connection.notify(
+    text='Training SpeakEasy!',
+  )
   # Prepare movie subtitle data.
   print("Preparing data in %s" % FLAGS.data_dir)
   sys.stdout.flush()
@@ -181,9 +186,14 @@ def train():
 
         # Print statistics for the previous epoch.
         perplexity = math.exp(loss) if loss < 300 else float('inf')
-        print ("global step %d learning rate %.4f step-time %.2f perplexity "
+        log_line = ("global step %d learning rate %.4f step-time %.2f perplexity "
                "%.2f" % (model.global_step.eval(), model.learning_rate.eval(),
                          step_time, perplexity))
+        print(log_line)
+        slack.connection.notify(
+          text=log_line,
+        )
+
         sys.stdout.flush()
         # Decrease learning rate if no improvement was seen over last 3 times.
         if len(previous_losses) > 2 and loss > max(previous_losses[-3:]):
@@ -200,7 +210,12 @@ def train():
           _, _, eval_loss, _ = model.step(sess, encoder_inputs, decoder_inputs,
                                        target_weights, bucket_id, True)
           eval_ppx = math.exp(eval_loss) if eval_loss < 300 else float('inf')
-          print("  eval: bucket %d perplexity %.2f" % (bucket_id, eval_ppx))
+          log_line = "eval: bucket %d perplexity %.2f" % (bucket_id, eval_ppx)
+          print("  %s" % log_line)
+          slack.connection.notify(
+            text=log_line,
+          )
+
         sys.stdout.flush()
 
 
@@ -268,15 +283,25 @@ def self_test():
 
 
 def main(_):
-  print('in main function call')
-  sys.stdout.flush()
-  if FLAGS.self_test:
-    self_test()
-  elif FLAGS.decode:
-    decode()
-  else:
-    print ('training')
-    train()
+  try:
+    print('in main function call')
+    sys.stdout.flush()
+    if FLAGS.self_test:
+      self_test()
+    elif FLAGS.decode:
+      decode()
+    else:
+      print ('training')
+      train()
+  except Exception as e:
+    slack.connection.notify(
+      text='SpeakEasy shutting down!',
+      fields=[{
+        'title': 'Error',
+        'value': str(e),
+      }],
+    )
+    raise e
 
 if __name__ == "__main__":
   tf.app.run()

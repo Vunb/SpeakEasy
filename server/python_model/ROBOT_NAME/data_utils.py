@@ -29,6 +29,8 @@ _DIGIT_RE = re.compile(r"\d")
 
 def basic_tokenizer(sentence):
   """Split the sentence into a list of single words."""
+  if sentence == 'breakhereplease':
+    return sentence
   words = []
   for space_separated_fragment in sentence.strip().lower().split():
     words.extend(re.split(_WORD_SPLIT, space_separated_fragment))
@@ -63,12 +65,13 @@ def create_vocabulary(vocabulary_path, data_path, max_vocabulary_size,
         if counter % 100000 == 0:
           print("  processing line %d" % counter)
         tokens = tokenizer(line) if tokenizer else basic_tokenizer(line)
-        for w in tokens:
-          word = re.sub(_DIGIT_RE, "0", w) if normalize_digits else w
-          if word in vocab:
-            vocab[word] += 1
-          else:
-            vocab[word] = 1
+        if tokens != 'breakhereplease':
+          for w in tokens:
+            word = re.sub(_DIGIT_RE, "0", w) if normalize_digits else w
+            if word in vocab:
+              vocab[word] += 1
+            else:
+              vocab[word] = 1
       vocab_list = _START_VOCAB + sorted(vocab, key=vocab.get, reverse=True)
       if len(vocab_list) > max_vocabulary_size:
         vocab_list = vocab_list[:max_vocabulary_size]
@@ -129,6 +132,8 @@ def sentence_to_token_ids(sentence, vocabulary,
     words = tokenizer(sentence)
   else:
     words = basic_tokenizer(sentence)
+  if words == 'breakhereplease':
+    return [words]
   if not normalize_digits:
     return [vocabulary.get(w, UNK_ID) for w in words]
   # Normalize digits by 0 before looking words up in the vocabulary.
@@ -180,8 +185,8 @@ def prepare_data(data_dir, vocabulary_size):
       (3) path to the vocabulary file
   """
   # Points to training and dev data
-  train_path = (data_dir) + ('/train_data_raw.txt')
-  dev_path = (data_dir) + ('/dev_data_raw.txt')
+  train_path = (data_dir) + ('/MASTER_FILE')
+  dev_path = (data_dir) + ('/VALIDATION')
 
   # Create vocabulary of appropriate size
   vocab_path = os.path.join(data_dir, "vocab%d" % vocabulary_size)
@@ -194,6 +199,7 @@ def prepare_data(data_dir, vocabulary_size):
   # Create token ids for the development data.
   dev_ids_path = dev_path + (".ids%d" % vocabulary_size)
   data_to_token_ids(dev_path, dev_ids_path, vocab_path)
+
 
   return (train_ids_path, dev_ids_path, vocab_path)
 
