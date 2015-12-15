@@ -78,7 +78,7 @@ def read_data(data_path, max_size=None):
     target = data_file.readline()
     counter = 0
     while source and target and (not max_size or counter < max_size):
-      if (len(source.split()) > 0) and (len(target.split()) > 0) and ('552' not in source.split()) and ('552' not in target.split()):
+      if (len(source.split()) > 0) and (len(target.split()) > 0) and ('breakHerePlease' not in source.split()) and ('breakHerePlease' not in target.split()):
         counter += 1
         if counter % 1000 == 0:
           print("  reading data line %d" % counter)
@@ -186,7 +186,7 @@ def train():
 
         # Print statistics for the previous epoch.
         perplexity = math.exp(loss) if loss < 300 else float('inf')
-        log_line = ("global step %d learning rate %.4f step-time %.2f perplexity "
+        log_line = ("global step %d learning rate %.4f step-time %.2f perplexity - 10000 words "
                "%.2f" % (model.global_step.eval(), model.learning_rate.eval(),
                          step_time, perplexity))
         print(log_line)
@@ -200,7 +200,7 @@ def train():
           result = sess.run([model.learning_rate_decay_op])
         previous_losses.append(loss)
         # Save checkpoint and zero timer and loss.
-        checkpoint_path = os.path.join(FLAGS.train_dir, "translate.ckpt")
+        checkpoint_path = os.path.join(FLAGS.train_dir, "speakEasy10000.ckpt")
         model.saver.save(sess, checkpoint_path, global_step=model.global_step)
         step_time, loss = 0.0, 0.0
         # Run evals on development set and print their perplexity.

@@ -20,8 +20,6 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     #TENSORFLOW_PACKAGE=https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.5.0-cp27-none-linux_x86_64.whl
   fi
 
-fi
-
 elif [[ "$OSTYPE" == "darwin"* ]]; then
   echo "Configuring for Mac OS..."
   TENSORFLOW_PACKAGE=https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl
