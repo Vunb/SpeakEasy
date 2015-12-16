@@ -1,6 +1,10 @@
-#!/usr/bin/env bash
+#!/usr/local/bin/bash
 # Runs the speak_easy model.
 
-ROBOT_NAME=ROBOT_NAME
+TRAIN_DIR='/Volumes/Seagate\ Backup Plus Drive/TrainingDirectories'
+DATA_DIR='/Volumes/Seagate Backup Plus Drive/SPEAKEASY_DATA'
+ROBOT_NAME=MARVIN
 
-venv/bin/python $ROBOT_NAME/speak_easy.py --train_dir=$ROBOT_NAME/train_dir2 --data_dir='/Volumes/Seagate Backup Plus Drive/SPEAKEASY_DATA' $@
+
+
+venv/bin/python $ROBOT_NAME/speak_easy.py --train_dir='/Volumes/Seagate\ Backup Plus Drive/TrainingDirectories' --data_dir='/Volumes/Seagate Backup Plus Drive/SPEAKEASY_DATA' $@

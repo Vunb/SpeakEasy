@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs tensorboard.
 
-ROBOT_NAME=ROBOT_NAME
+ROBOT_NAME=MARVIN
 DIR=$ROBOT_NAME/train_dir/logs
 
 echo "Loading events from $DIR..."
