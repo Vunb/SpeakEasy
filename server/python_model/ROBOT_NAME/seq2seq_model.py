@@ -111,7 +111,7 @@ class Seq2SeqModel(object):
 
     # The seq2seq function: we use embedding for the input and attention.
     def seq2seq_f(encoder_inputs, decoder_inputs, do_decode):
-      return seq2seq.embedding_attention_seq2seq(
+      return seq2seq.embedding_rnn_seq2seq(
           encoder_inputs, decoder_inputs, cell, vocab_size, vocab_size, output_projection=output_projection,
           feed_previous=do_decode)
 

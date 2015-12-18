@@ -73,9 +73,9 @@ def read_data(data_path, max_size=None):
   """
   data_set = [[] for _ in _buckets]
   with gfile.GFile(data_path, mode="r") as data_file:    
-    source, _ = data_file.readline(), data_file.readline()
-    # target line is line after source line
+    source = data_file.readline()
     target = data_file.readline()
+    # target line is line after source line
     counter = 0
     while source and target and (not max_size or counter < max_size):
       if (len(source.split()) > 0) and (len(target.split()) > 0) and ('breakHerePlease' not in source.split()) and ('breakHerePlease' not in target.split()):
@@ -200,7 +200,7 @@ def train():
           result = sess.run([model.learning_rate_decay_op])
         previous_losses.append(loss)
         # Save checkpoint and zero timer and loss.
-        checkpoint_path = os.path.join(FLAGS.train_dir, "speakEasy10000.ckpt")
+        checkpoint_path = os.path.join(FLAGS.train_dir, "speakEasy40000.ckpt")
         model.saver.save(sess, checkpoint_path, global_step=model.global_step)
         step_time, loss = 0.0, 0.0
         # Run evals on development set and print their perplexity.
