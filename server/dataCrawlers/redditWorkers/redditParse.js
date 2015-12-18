@@ -5,12 +5,6 @@ var dictionary = {};
 var wordsArr = [];
 var currentLine = 0;
 
-// var dictionaryStream = fs.createWriteStream('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/DICTIONARY', {
-//   encoding: 'utf-8'
-// });
-// var wordsStream = fs.createWriteStream('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/WORDSARR', {
-//   encoding: 'utf-8'
-// });
 new lazy(fs.createReadStream('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/RC_2015-01'))
   .lines
   .forEach(function(line) {
@@ -44,6 +38,9 @@ new lazy(fs.createReadStream('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/RC_2
       text = text.replace(/\.\s\.\s\./g, '\.').replace(/\!\s\!\s\!/g, '\!').replace(/\?\s\?\s\?/g, '\?')
       text = text.replace(/mrs\./g, 'mrs\s').replace(/mr\./g, 'mr\s').replace(/ms\./g, 'ms\s').replace(/dr\./g, 'dr ').replace(/♪/g, '').replace(/�/g, '').replace(/(\s)\1{1,}/g, '\s').replace(/[a-z]+_/g, '')
 
+      //FUCKING HASHTAGS
+      text = text.replace(/#\w+/g, '');
+
       //remove the rest of the garbage
       text = text.replace(/[^\w\s\.\!\,\?\']/g, '');
       text = text.trim()
@@ -56,44 +53,47 @@ new lazy(fs.createReadStream('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/RC_2
         text = text.replace(/\,/g, " \, ");
         text = text.replace(/\\/g, "");
         var sentences = text.split('***');
-        // console.log(sentences, 'sentences');
+
         //last one is an empty string, fuck it
         for (var i = 0; i < sentences.length - 1; i++) {
           words = sentences[i].split(" ");
           for (var j = 0; j < words.length; j++) {
             var word = words[j];
-            if (word.length < 12 && !/\d/.test(word)) {
+            if (word.length < 12 && !/\d/.test(word) && !!isNaN(parseInt(word))) {
               if (word !== "" && wordsArr[dictionary[word]] === undefined) {
                 dictionary[word] = wordsArr.length
-                wordsArr[dictionary[word]] = ([word, [currentLine, i]]);
+                wordsArr[dictionary[word]] = ([word, 1]);
               } else if (word !== "") {
-                wordsArr[dictionary[word]].push([currentLine, i]);
+                wordsArr[dictionary[word]][1]++;
               }
             }
           }
         }
       }
     }
+
     if (currentLine % 100000 === 0) {
       console.log("Current line is ", currentLine)
-      console.log(wordsArr.length);
-      console.log(dictionary)
-        // dictionaryStream.write('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/WORDSARR', 'utf-8', JSON.stringify(wordsArr));
-        // dictionaryStream.write('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/DICTIONARY', 'utf-8', JSON.stringify(dictionary));
+      console.log(wordsArr.length)
+    }
+    if (currentLine > 53851540) {
+      writeToDisk();
     }
     currentLine++;
   });
 
-sorted = wordsArr.sort(function(a, b) {
-  return (a.length > b.length) ? 1 : -1;
-})
+function writeToDisk() {
+  console.log(wordsArr.length);
+  wordsArr.sort(function(a, b) {
+    return (a[1] < b[1]) ? 1 : -1;
+  });
+  console.log(wordsArr);
 
-for (var i = 0; i < wordsArr.length; i++) {
-  var toWrite = wordsArr[i][0] + " : " + wordsArr[i].length - 1 + "\n";
-  fs.appendFileSync('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/IN_ORDER', toWrite);
-}
+  fs.writeFileSync('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/IN_ORDER', "");
+  var max = Math.min(150000, wordsArr.length);
+  for (var i = 0; i < max; i++) {
+    var toWrite = wordsArr[i][0] + " : " + wordsArr[i][1] + "\n";
+    fs.appendFileSync('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/IN_ORDER', toWrite);
+  }
 
-for (var key in dictionary) {
-  var toWrite = key + " : " + dictionary[key] + "\n";
-  fs.appendFileSync('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/DICT', toWrite);
 }
