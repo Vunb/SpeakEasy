@@ -84,6 +84,7 @@ FLAGS = tf.app.flags.FLAGS
 # Only relevant if we are using a bucketed model
 _buckets = [(5, 10), (10, 15), (20, 25), (40, 50)]
 
+print(FLAGS.max_sentence_length, "sentence length??")
 
 def read_data(data_path, max_size=None):
   """Read data from data files to compile data set.  Each line is used twice, once as a prompt and once as a response.
@@ -147,7 +148,7 @@ def create_model(session, forward_only):
   ckpt = tf.train.get_checkpoint_state(FLAGS.train_dir)
 
   # Uncomment this to hardcode a checkpoint path
-  # model.saver.restore(session, '/Volumes/Seagate Backup Plus Drive/SPEAKEASY_DATA/TrainingDirectories/DEC15_4000/speakEasy10000.ckpt-116800')
+  # model.saver.restore(session, '/Volumes/Seagate Backup Plus Drive/SPEAKEASY_DATA/TrainingDirectories/DEC15_4000/speakEasy10000.ckpt-156400')
   # return model
 
   if ckpt and gfile.Exists(ckpt.model_checkpoint_path):
@@ -156,6 +157,7 @@ def create_model(session, forward_only):
     model.saver.restore(session, ckpt.model_checkpoint_path)
   else:
     print("Created model with fresh parameters.")
+    writer = tf.train.SummaryWriter(FLAGS.log_dir, session.graph_def)
     # tf.train.write_graph(session.graph_def, FLAGS.log_dir, 'graph.pbtxt')
     session.run(tf.initialize_all_variables())
 
@@ -175,7 +177,7 @@ def train():
 
   with tf.Session() as sess:
     # Create model.
-    print("Creating %d model with %d layers of %d units." % (FLAGS.model_type, FLAGS.num_layers, FLAGS.size))
+    print("Creating %s model with %d layers of %d units." % (FLAGS.model_type, FLAGS.num_layers, FLAGS.size))
     sys.stdout.flush()
     if FLAGS.buckets: print("Using bucketed model.")
     sys.stdout.flush()
@@ -252,7 +254,7 @@ def train():
           result = sess.run([model.learning_rate_decay_op])
         previous_losses.append(loss)
         # Save checkpoint and zero timer and loss.
-        checkpoint_path = os.path.join(FLAGS.train_dir, "speakEasy" + FLAGS.vocab_size + ".ckpt")
+        checkpoint_path = os.path.join(FLAGS.train_dir, "speakEasy" + str(FLAGS.vocab_size) + ".ckpt")
         model.saver.save(sess, checkpoint_path, global_step=model.global_step)
         step_time, loss = 0.0, 0.0
 

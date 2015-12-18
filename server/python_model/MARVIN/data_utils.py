@@ -1,4 +1,4 @@
-"""Utilities for downloading data from WMT, tokenizing, vocabularies."""
+"""Utilities for building vocabularies and tokenizing data."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -11,7 +11,7 @@ import tarfile
 from tensorflow.python.platform import gfile
 from six.moves import urllib
 
-# Special vocabulary symbols - we always put them at the start.
+# Special vocabulary symbols
 _PAD = "_PAD"
 _GO = "_GO"
 _EOS = "_EOS"
@@ -41,11 +41,14 @@ def create_vocabulary(vocabulary_path, data_path, max_vocabulary_size,
                       tokenizer=None, normalize_digits=True):
   """Create vocabulary file (if it does not exist yet) from data file.
 
-  Data file is assumed to contain one sentence per line. Each sentence is
-  tokenized and digits are normalized (if normalize_digits is set).
+  Data file is assumed to contain one sentence per line that has been converted to all lowercase
+  (except for 'I' and all associated contractions).
+  Each sentence is tokenized and digits are normalized (if normalize_digits is set).
   Vocabulary contains the most-frequent tokens up to max_vocabulary_size.
   We write it to vocabulary_path in a one-token-per-line format, so that later
-  token in the first line gets id=0, second line gets id=1, and so on.
+  token in the first line gets id=0, second line gets id=1, and so on. Scripts are separted by 'breakHerePlease'
+  string that is NOT tokenized or added to the vocabulary but is recognized later during model training to
+  prevent prompt/response pairing accross different movies or episodes.
 
   Args:
     vocabulary_path: path where the vocabulary will be created.
@@ -175,7 +178,7 @@ def data_to_token_ids(data_path, target_path, vocabulary_path,
 
 
 def prepare_data(data_dir, vocabulary_size):
-  """Get WMT data into data_dir, create vocabularies and tokenize data.
+  """Create vocabularies and tokenize data.
 
   Args:
     data_dir: directory in which the data sets will be stored.

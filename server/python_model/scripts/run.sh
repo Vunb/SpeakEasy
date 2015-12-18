@@ -7,4 +7,4 @@ ROBOT_NAME=MARVIN
 
 
 
-venv/bin/python $ROBOT_NAME/speak_easy.py --train_dir='/Volumes/Seagate\ Backup Plus Drive/TrainingDirectories' --data_dir='/Volumes/Seagate Backup Plus Drive/SPEAKEASY_DATA' $@
+venv/bin/python $ROBOT_NAME/speak_easy.py --train_dir='/Volumes/HD/SPEAKEASY_DATA/TrainingDirectories/babymodel2' --data_dir='/Volumes/HD/SPEAKEASY_DATA' $@

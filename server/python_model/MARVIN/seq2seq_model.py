@@ -241,7 +241,7 @@ class Seq2SeqModel(object):
         output_feed = [self.losses[bucket_id]]  # Loss for this batch.
         for l in xrange(decoder_size):  # Output logits.
           output_feed.append(self.outputs[bucket_id][l])
-    except AttributeError:
+    except TypeError:
       if not forward_only:
         output_feed = [self.updates,  # Update Op that does SGD.
                       self.gradient_norms,  # Gradient norm.
@@ -293,7 +293,7 @@ class Seq2SeqModel(object):
     for _ in xrange(self.batch_size):
       try:
         encoder_input, decoder_input = random.choice(data[bucket_id])
-      except AttributeError:
+      except TypeError:
         encoder_input, decoder_input = random.choice(data)
 
       # Encoder inputs are padded and then reversed.
