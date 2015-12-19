@@ -76,7 +76,7 @@ new lazy(fs.createReadStream('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/RC_2
       console.log("Current line is ", currentLine)
       console.log(wordsArr.length)
     }
-    if (currentLine > 53851540) {
+    if (currentLine % 100000 === 0) {
       writeToDisk();
     }
     currentLine++;
@@ -87,13 +87,14 @@ function writeToDisk() {
   wordsArr.sort(function(a, b) {
     return (a[1] < b[1]) ? 1 : -1;
   });
-  console.log(wordsArr);
 
   fs.writeFileSync('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/IN_ORDER', "");
   var max = Math.min(150000, wordsArr.length);
   for (var i = 0; i < max; i++) {
-    var toWrite = wordsArr[i][0] + " : " + wordsArr[i][1] + "\n";
+    var toWrite = wordsArr[i][0] + ":  " + wordsArr[i][1] + "\n";
     fs.appendFileSync('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/IN_ORDER', toWrite);
   }
 
 }
+
+// 53851540
