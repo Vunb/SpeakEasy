@@ -12,6 +12,7 @@ var finished = true;
 var OG_REDDIT_PATH = '/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/RC_2015-01';
 var PARSED_REDDIT_PATH = '/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/REDDIT_COMMENTS';
 var VOCAB_PATH = '/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/REDDIT_VOCAB';
+var SUBREDDIT_PATH = '/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/SUBREDDITS/'
 
 var MAX_WORDS = 40000;
 var MAX_SENTENCE_LENGTH = 30;
@@ -47,33 +48,60 @@ function readRedditData(actionCallback, successCallback) {
       var line = JSON.parse(line.toString());
       var subreddit = line["subreddit_id"];
 
-      if (currentSubreddit === undefined && finishedSubReddits[subreddit] === undefined) {
-        currentSubreddit = subreddit;
-      }
+      if (currentLine > 4500000) {
+        // if (currentSubreddit === undefined && finishedSubReddits[subreddit] === undefined) {
+        //   currentSubreddit = subreddit;
+        // }
 
-      if (currentSubreddit && subreddit === currentSubreddit || successCallback) {
-        finished = false;
-        var sentences = parseTextBody(line);
-        if (sentences.length) actionCallback(sentences, line);
-      }
+        // if (currentSubreddit && subreddit === currentSubreddit || successCallback) {
+        //   finished = false;
+        //   var sentences = parseTextBody(line);
+        //   if (sentences.length) actionCallback(sentences, line);
+        // }
 
-      // Logging as we read
-      if (currentLine % 100000 === 0) {
-        console.log("Current line is", currentLine);
-        console.log(wordsArr.length);
-      }
+        finishedSubReddits[subreddit] = finishedSubReddits[subreddit] || [];
 
-      if (currentLine === DATA_LENGTH) {
-        if (finished === false) {
-          console.log("Finished with", currentSubreddit);
-          finished = true;
-          finishedSubReddits[currentSubreddit] = true;
-          currentSubreddit = undefined;
-          currentLine = 0;
-          recordBestPairs();
-          readRedditData();
-        } else {
+        // if (finishedSubReddits[subreddit] === undefined) {
+        //   finishedSubReddits[subreddit] = [];
+        // fs.writeFileSync(SUBREDDIT_PATH + subreddit, JSON.stringify(line) + "\n", 'utf-8');
+        // } else {
+        finishedSubReddits[subreddit].push(JSON.stringify(line) + "\n");
+        // if (finishedSubReddits[subreddit].length > 100) {
+        //   var toAppend = finishedSubReddits[subreddit].join('');
+        //   fs.appendFileSync(SUBREDDIT_PATH + subreddit, toAppend, 'utf-8');
+        //   finishedSubReddits[subreddit] = [];
+        // }
+        // }
+        // Logging as we read
+        if (currentLine % 100000 === 0) {
+          console.log("Current line is", currentLine);
+        }
+        if (currentLine % 500000 === 0) {
+          console.log("Current line is", currentLine);
+          for (var key in finishedSubReddits) {
+            var toAppend = finishedSubReddits[key].join('');
+            fs.appendFileSync(SUBREDDIT_PATH + key, toAppend, 'utf-8');
+            finishedSubReddits[key] = [];
+            delete finishedSubReddits[key];
+
+          }
+          console.log(finishedSubReddits);
+        }
+
+        if (currentLine === DATA_LENGTH) {
+          // if (finished === false) {
+          //   console.log("Finished with", currentSubreddit);
+          //   finished = true;
+          //   finishedSubReddits[currentSubreddit] = true;
+          //   currentSubreddit = undefined;
+          //   currentLine = 0;
+          //   recordBestPairs();
+          //   readRedditData(actionCallback, successCallback);
+          // } else {
+
+          console.log('Done!')
           successCallback();
+          // }
         }
       }
       currentLine++;

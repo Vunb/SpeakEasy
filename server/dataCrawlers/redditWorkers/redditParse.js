@@ -76,7 +76,7 @@ new lazy(fs.createReadStream('/Volumes/HD/SPEAKEASY_DATA/REDDIT/reddit_data/RC_2
       console.log("Current line is ", currentLine)
       console.log(wordsArr.length)
     }
-    if (currentLine % 100000 === 0) {
+    if (currentLine > 53851540) {
       writeToDisk();
     }
     currentLine++;
