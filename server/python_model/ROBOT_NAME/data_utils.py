@@ -185,8 +185,8 @@ def prepare_data(data_dir, vocabulary_size):
       (3) path to the vocabulary file
   """
   # Points to training and dev data
-  train_path = (data_dir) + ('/MASTER_FILE')
-  dev_path = (data_dir) + ('/VALIDATION')
+  train_path = (data_dir) + ("/BABYTRAIN_%d" % vocabulary_size)
+  dev_path = (data_dir) + ("/BABYVALIDATION_%d" % vocabulary_size)
 
   # Create vocabulary of appropriate size
   vocab_path = os.path.join(data_dir, "vocab%d" % vocabulary_size)

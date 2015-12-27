@@ -28,7 +28,7 @@ from tensorflow.python.platform import gfile
 
 
 tf.app.flags.DEFINE_float("learning_rate", 0.5, "Learning rate.")
-tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.99,
+tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.5,
                           "Learning rate decays by this much.")
 tf.app.flags.DEFINE_float("max_gradient_norm", 5.0,
                           "Clip gradients to this norm.")
@@ -73,8 +73,7 @@ def read_data(data_path, max_size=None):
   """
   data_set = [[] for _ in _buckets]
   with gfile.GFile(data_path, mode="r") as data_file:    
-    source = data_file.readline()
-    target = data_file.readline()
+    source, target = data_file.readline(), data_file.readline()
     # target line is line after source line
     counter = 0
     while source and target and (not max_size or counter < max_size):
@@ -90,8 +89,7 @@ def read_data(data_path, max_size=None):
           if len(source_ids) < source_size and len(target_ids) < target_size:
             data_set[bucket_id].append([source_ids, target_ids])
             break
-      source = target
-      target = data_file.readline()
+      source, target = data_file.readline(),  data_file.readline()
   return data_set
 
 
@@ -129,8 +127,10 @@ def train():
   print("Preparing data in %s" % FLAGS.data_dir)
   sys.stdout.flush()
   data_train, data_dev, _ = data_utils.prepare_data(FLAGS.data_dir, FLAGS.vocab_size)
-
-  with tf.Session() as sess:
+  
+  config = tf.ConfigProto()
+  config.gpu_options.allocator_type = 'BFC'
+  with tf.Session(config=config) as sess:
     # Create model.
     print("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.size))
     sys.stdout.flush()
@@ -175,7 +175,8 @@ def train():
       step_time += (time.time() - start_time) / FLAGS.steps_per_checkpoint
       loss += step_loss / FLAGS.steps_per_checkpoint
       current_step += 1
-
+      if current_step % 51579 == 0 and current_step > 257890 :
+        sess.run([model.learning_rate_decay_op])
       # Once in a while, we save checkpoint, print statistics, and run evals.
       if current_step % FLAGS.steps_per_checkpoint == 0:
 
@@ -186,8 +187,8 @@ def train():
 
         # Print statistics for the previous epoch.
         perplexity = math.exp(loss) if loss < 300 else float('inf')
-        log_line = ("global step %d learning rate %.4f step-time %.2f perplexity - 10000 words "
-               "%.2f" % (model.global_step.eval(), model.learning_rate.eval(),
+        log_line = ("global step %d learning rate %.4f step-time %.2f perplexity "
+               "%.2f BABYMODEL 768" % (model.global_step.eval(), model.learning_rate.eval(),
                          step_time, perplexity))
         print(log_line)
         slack.connection.notify(
@@ -196,11 +197,11 @@ def train():
 
         sys.stdout.flush()
         # Decrease learning rate if no improvement was seen over last 3 times.
-        if len(previous_losses) > 2 and loss > max(previous_losses[-3:]):
-          result = sess.run([model.learning_rate_decay_op])
-        previous_losses.append(loss)
+       # if len(previous_losses) > 2 and loss > max(previous_losses[-3:]):
+       #   result = sess.run([model.learning_rate_decay_op])
+       # previous_losses.append(loss)
         # Save checkpoint and zero timer and loss.
-        checkpoint_path = os.path.join(FLAGS.train_dir, "speakEasy40000.ckpt")
+        checkpoint_path = os.path.join(FLAGS.train_dir, "speakEasy25000.ckpt")
         model.saver.save(sess, checkpoint_path, global_step=model.global_step)
         step_time, loss = 0.0, 0.0
         # Run evals on development set and print their perplexity.
